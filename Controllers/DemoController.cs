@@ -1,4 +1,5 @@
-﻿
+﻿using HtmlAgilityPack.CssSelectors.NetCore;
+using HtmlAgilityPack;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -45,31 +46,57 @@ namespace Webdemo.Controllers
 
                 htmlDoc.LoadHtml(pageSource);
 
+                //give name
+                var name = htmlDoc.QuerySelector("div.product-title-small");
 
-                var name = htmlDoc.DocumentNode.SelectSingleNode("//h1[@class='product-title product_title entry-title']");
-                var divNode = htmlDoc.DocumentNode.SelectSingleNode("//div[@id='col-788850800']");
-                if (divNode != null)
+
+                //give price500/price1000
+                var divNode = htmlDoc.QuerySelector("div.price-wrapper");
+
+                var price = divNode.QuerySelectorAll("span.woocommerce-Price-amount");
+                string price500 = price[0].InnerText.Trim().Replace(".", "").Replace("&#8363;", "").Trim();
+
+                string price1000 = price[1].InnerText.Trim().Replace(".", "").Replace("&#8363;", "").Trim();
+
+
+                decimal.TryParse(price500, out decimal price500Value);
+                decimal.TryParse(price1000, out decimal price1000Value);
+
+
+
+                //give list image
+                var figureNode = htmlDoc.QuerySelector("figure.woocommerce-product-gallery__wrapper ");
+
+
+                var imgNodes = figureNode.QuerySelectorAll("img");
+                List<string> imageUrls = new List<string>();
+
+                foreach (var imgNode in imgNodes)
                 {
-                    var price = divNode.SelectNodes("//span[@class='woocommerce-Price-amount amount']/bdi");
-                    string price500 = price[0].InnerText.Trim().Replace(".", "").Replace("&#8363;", "").Trim(); 
-                     
-
-
-                    string price1000 = price[1].InnerText.Trim().Replace(".", "").Replace("&#8363;", "").Trim(); 
-                    
-
-                    decimal.TryParse(price500, out decimal price500Value);
-                    decimal.TryParse(price1000, out decimal price1000Value);
-
-                    var response = new Demo()
+                    string dataSrc = imgNode.GetAttributeValue("data-src", null);
+                    if (!string.IsNullOrEmpty(dataSrc))
                     {
-                        name = name.InnerText.Trim(),
-                        price500 = price500Value,
-                        price1000 = price1000Value,
-                    };
-                    return Ok(response);
+                        imageUrls.Add(dataSrc);
+                    }
                 }
-                return BadRequest();
+
+                var imgList = new List<Image>();
+                foreach (var imageUrl in imageUrls) {
+                    imgList.Add(new Image
+                    {
+                        ImageURL = imageUrl,
+                    });
+                }
+
+                var response = new Demo()
+                {
+                    name = name.InnerText.Trim(),
+                    price500 = price500Value,
+                    price1000 = price1000Value,
+                    ImageURLList = imgList.ToList()
+                };
+                return Ok(response);
+
             }
             catch (HttpRequestException ex)
             {
