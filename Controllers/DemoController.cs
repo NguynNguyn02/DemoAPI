@@ -65,7 +65,7 @@ namespace Webdemo.Controllers
 
 
                 //give list image
-                var figureNode = htmlDoc.QuerySelector("figure.woocommerce-product-gallery__wrapper ");
+                var figureNode = htmlDoc.QuerySelector("figure.woocommerce-product-gallery__wrapper");
 
 
                 var imgNodes = figureNode.QuerySelectorAll("img");
